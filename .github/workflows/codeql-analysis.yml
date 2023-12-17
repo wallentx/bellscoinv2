@@ -4,12 +4,11 @@ name: CodeQL
 on:
   push:
     branches:
-      - '*-dev'
-      - '*-maint'
+      - '*'
   pull_request:
     # The branches below must be a subset of the branches above
     branches:
-      - '*-dev'
+      - '*'
     paths-ignore:
       - '**/*.md'
       - '**/*.txt'
@@ -21,7 +20,7 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
