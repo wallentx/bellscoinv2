@@ -164,6 +164,13 @@ jobs:
           path: ~/.ccache
           key: ${{ matrix.name }}-${{ env.cache-name }}-${{ hashFiles('**/configure.ac', '.github/workflows/build-test.yml') }}
 
+      - name: Set Release Flag for Full Releases
+        if: github.event_name == 'release' && !github.event.release.prerelease
+        run: |
+          sed -i 's/_CLIENT_VERSION_IS_RELEASE, false/_CLIENT_VERSION_IS_RELEASE, true/' configure.ac
+          sed -i 's/#define CLIENT_VERSION_IS_RELEASE false/#define CLIENT_VERSION_IS_RELEASE true/' src/clientversion.h
+          autoconf
+
       - name: Build Bellscoin
         run: |
           depends/${{ matrix.host }}/native/bin/ccache --max-size="$CCACHE_SIZE"
