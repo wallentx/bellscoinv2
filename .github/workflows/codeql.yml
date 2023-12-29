@@ -1,14 +1,15 @@
 name: 🚨 CodeQL
 
 on:
+  workflow_dispatch:
   push:
+    paths-ignore:
+      - '**/*.md'
     branches:
-      - '*-dev'
-      - '*-maint'
+      - '**'
+    tags-ignore:
+      - '**'
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches:
-      - '*-dev'
     paths-ignore:
       - '**/*.md'
       - '**/*.txt'
@@ -41,10 +42,6 @@ jobs:
         sudo apt-get update --yes
         sudo apt-get install build-essential libtool autotools-dev automake pkg-config bsdmainutils --yes
 
-    - name: Set permission
-      run: |
-        cd .. && chmod 777 -R ./bellscoinv2 && cd ./bellscoinv2 
-
     - name: Dependency cache
       uses: actions/cache@v3
       env:
@@ -67,6 +64,7 @@ jobs:
     - name: Build Bellscoin
       run: |
        ./autogen.sh
+       autoupdate
        ./configure --prefix="$PWD"/depends/x86_64-pc-linux-gnu
        make -j4
 
