@@ -191,7 +191,7 @@ jobs:
       - name: Bundle artifacts
         run: |
           if [ ${{ github.ref_type }} == "tag" ]; then
-            ARTIFACT_VERSION="${{ github.ref#refs/tags/ }}"
+            ARTIFACT_VERSION="${{ github.ref_name }}"
             echo "ARTIFACT_VERSION=$ARTIFACT_VERSION" >> "$GITHUB_ENV"
             echo "RELEASE_TAG=$ARTIFACT_VERSION" >> "$GITHUB_ENV"
           else
