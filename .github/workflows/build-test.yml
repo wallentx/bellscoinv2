@@ -212,7 +212,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: bellscoin-${{ github.sha }}-${{ matrix.name }}
+          name: bellscoin-${{ env.GIT_SHORT_HASH }}-${{ matrix.name }}
           path: |
             bells-${{ env.ARTIFACT_VERSION }}-${{ matrix.name }}
             ${{ matrix.name }}-bench.csv
