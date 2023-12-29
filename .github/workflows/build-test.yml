@@ -214,7 +214,7 @@ jobs:
         with:
           name: bellscoin-${{ github.sha }}-${{ matrix.name }}
           path: |
-            bells-"$ARTIFACT_VERSION"-${{ matrix.host }}
+            bells-${{ env.ARTIFACT_VERSION }}-${{ matrix.host }}
             ${{ matrix.name }}-bench.csv
 
       - name: Upload release artifacts
@@ -224,5 +224,5 @@ jobs:
         run: |
           gh release upload \
             --repo ${{ github.repository }} \
-            "$RELEASE_TAG" \
-            bells-"$ARTIFACT_VERSION"-${{ matrix.host }}*
+            ${{ env.RELEASE_TAG }} \
+            bells-${{ env.ARTIFACT_VERSION }}-${{ matrix.host }}*
