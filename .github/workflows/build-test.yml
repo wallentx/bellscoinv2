@@ -223,4 +223,4 @@ jobs:
           gh release upload \
             --repo ${{ github.repository }} \
             ${{ env.RELEASE_TAG }} \
-            bells-${{ env.ARTIFACT_VERSION }}-${{ matrix.name }}*
+            bells-${{ env.ARTIFACT_VERSION }}-${{ matrix.name }}.zip
