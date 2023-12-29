@@ -200,13 +200,13 @@ jobs:
             echo "GIT_SHORT_HASH=$GIT_SHORT_HASH" >> "$GITHUB_ENV"
             echo "ARTIFACT_VERSION=$GIT_SHORT_HASH" >> "$GITHUB_ENV"
           fi
-          mkdir -p bells-"$ARTIFACT_VERSION"-${{ matrix.host }}
-          cp -a depends/${{ matrix.host }}/bin/bells* bells-"$ARTIFACT_VERSION"-${{ matrix.host }}/
-          chmod +x bells-"$ARTIFACT_VERSION"-${{ matrix.host }}/bells*
+          mkdir -p bells-"$ARTIFACT_VERSION"-${{ matrix.name }}
+          cp -a depends/${{ matrix.host }}/bin/bells* bells-"$ARTIFACT_VERSION"-${{ matrix.name }}/
+          chmod +x bells-"$ARTIFACT_VERSION"-${{ matrix.name }}/bells*
           if [ ${{ matrix.host }} == "x86_64-win" ]; then
-            7z a -tzip bells-"$ARTIFACT_VERSION"-${{ matrix.host }}.zip bells-"$ARTIFACT_VERSION"-${{ matrix.host }}
+            7z a -tzip bells-"$ARTIFACT_VERSION"-${{ matrix.name }}.zip bells-"$ARTIFACT_VERSION"-${{ matrix.name }}
           else
-            tar -czf bells-"$ARTIFACT_VERSION"-${{ matrix.host }}.tar.gz bells-"$ARTIFACT_VERSION"-${{ matrix.host }}
+            tar -czf bells-"$ARTIFACT_VERSION"-${{ matrix.name }}.tar.gz bells-"$ARTIFACT_VERSION"-${{ matrix.name }}
           fi
 
       - name: Upload artifacts
@@ -214,7 +214,7 @@ jobs:
         with:
           name: bellscoin-${{ github.sha }}-${{ matrix.name }}
           path: |
-            bells-${{ env.ARTIFACT_VERSION }}-${{ matrix.host }}
+            bells-${{ env.ARTIFACT_VERSION }}-${{ matrix.name }}
             ${{ matrix.name }}-bench.csv
 
       - name: Upload release artifacts
@@ -225,4 +225,4 @@ jobs:
           gh release upload \
             --repo ${{ github.repository }} \
             ${{ env.RELEASE_TAG }} \
-            bells-${{ env.ARTIFACT_VERSION }}-${{ matrix.host }}*
+            bells-${{ env.ARTIFACT_VERSION }}-${{ matrix.name }}*
