@@ -10,6 +10,9 @@ on:
       - 'doc/**'
       - 'contrib/**'
       - '**/*.md'
+  release:
+    types: [published]
+
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}-${{ github.event_name }}-${{ (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/version') || (github.ref == 'refs/heads/dev')) && github.sha || '' }}
   cancel-in-progress: true
@@ -137,10 +140,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set permission
-        run: |
-          cd .. && chmod 777 -R ./bellscoinv2 && cd ./bellscoinv2 
-
       - name: Dependency cache
         uses: actions/cache@v3
         env:
@@ -189,11 +188,41 @@ jobs:
         if: ${{ matrix.check-symbols }}
         run: make -C src check-symbols
 
+      - name: Bundle artifacts
+        run: |
+          if [ ${{ github.ref_type }} == "tag" ]; then
+            ARTIFACT_VERSION="${{ github.ref#refs/tags/ }}"
+            echo "ARTIFACT_VERSION=$ARTIFACT_VERSION" >> "$GITHUB_ENV"
+            echo "RELEASE_TAG=$ARTIFACT_VERSION" >> "$GITHUB_ENV"
+          else
+            GIT_SHORT_HASH="$(echo "${GITHUB_SHA}" | cut -c1-8)"
+            ARTIFACT_VERSION="$GIT_SHORT_HASH"
+            echo "GIT_SHORT_HASH=$GIT_SHORT_HASH" >> "$GITHUB_ENV"
+            echo "ARTIFACT_VERSION=$GIT_SHORT_HASH" >> "$GITHUB_ENV"
+          fi
+          mkdir -p bells-"$ARTIFACT_VERSION"-${{ matrix.host }}
+          cp -a depends/${{ matrix.host }}/bin/bells* bells-"$ARTIFACT_VERSION"-${{ matrix.host }}/
+          chmod +x bells-"$ARTIFACT_VERSION"-${{ matrix.host }}/bells*
+          if [ ${{ matrix.host }} == "x86_64-win" ]; then
+            7z a -tzip bells-"$ARTIFACT_VERSION"-${{ matrix.host }}.zip bells-"$ARTIFACT_VERSION"-${{ matrix.host }}
+          else
+            tar -czf bells-"$ARTIFACT_VERSION"-${{ matrix.host }}.tar.gz bells-"$ARTIFACT_VERSION"-${{ matrix.host }}
+          fi
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: bellscoin-${{ github.sha }}-${{ matrix.name }}
           path: |
-            depends/${{ matrix.host }}/bin/bells*
-            dist/Bellscoin-Qt.app
+            bells-"$ARTIFACT_VERSION"-${{ matrix.host }}
             ${{ matrix.name }}-bench.csv
+
+      - name: Upload release artifacts
+        if: ${{ github.event_name == 'release' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload \
+            --repo ${{ github.repository }} \
+            "$RELEASE_TAG" \
+            bells-"$ARTIFACT_VERSION"-${{ matrix.host }}*
