@@ -26,7 +26,7 @@ jobs:
     name: ${{ matrix.name }}
 
     env:
-      MAKEJOBS: "-j3"
+      MAKEJOBS: "-j4"
       CHECK_DOC: "0"
       CCACHE_SIZE: "100M"
       CCACHE_TEMPDIR: /tmp/.ccache-temp
@@ -132,10 +132,25 @@ jobs:
 
     steps:
       - name: Install packages
+        shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install build-essential libtool autotools-dev automake pkg-config bsdmainutils curl ca-certificates ccache python3 rsync git procps bison
-          sudo apt-get install ${{ matrix.packages }}
+          sudo apt-get install -y \
+            automake \
+            autotools-dev \
+            bison \
+            bsdmainutils \
+            build-essential \
+            ca-certificates \
+            ccache \
+            curl \
+            git \
+            libtool \
+            pkg-config \
+            procps \
+            python3 \
+            rsync \
+            ${{ matrix.packages }}
 
       - name: Post install
         if: ${{ matrix.postinstall }}
@@ -153,6 +168,7 @@ jobs:
           key: ${{ matrix.name }}-${{ env.cache-name }}-${{ hashFiles('depends/packages/*', '.github/workflows/build-test.yml') }}
 
       - name: Build depends
+        shell: bash
         run: |
           make "$MAKEJOBS" -C depends HOST=${{ matrix.host }} ${{ matrix.dep-opts }}
 
@@ -166,26 +182,38 @@ jobs:
 
       - name: Set Release Flag for Full Releases
         if: github.event_name == 'release' && !github.event.release.prerelease
+        shell: bash
         run: |
           sed -i 's/_CLIENT_VERSION_IS_RELEASE, false/_CLIENT_VERSION_IS_RELEASE, true/' configure.ac
           sed -i 's/#define CLIENT_VERSION_IS_RELEASE false/#define CLIENT_VERSION_IS_RELEASE true/' src/clientversion.h
           autoconf
 
       - name: Build Bellscoin
+        shell: bash
         run: |
           depends/${{ matrix.host }}/native/bin/ccache --max-size="$CCACHE_SIZE"
           ./autogen.sh
-          ./configure --prefix="$PWD"/depends/${{ matrix.host }} ${{ matrix.config-opts }} --enable-reduce-exports || ( cat config.log && false)
+          autoupdate
+          CONFIG_OPTS=${{ matrix.config-opts }}
+          if [ ${{ matrix.run-tests }} = "false" ]; then
+            CONFIG_OPTS="$CONFIG_OPTS --disable-tests"
+          fi
+          if [ ${{ matrix.run-bench }} = "false" ]; then
+            CONFIG_OPTS="$CONFIG_OPTS --disable-bench"
+          fi
+          ./configure --prefix="$PWD"/depends/${{ matrix.host }} "$CONFIG_OPTS" --enable-reduce-exports || ( cat config.log && false)
           make "$MAKEJOBS" ${{ matrix.goal }} || ( echo "Build failure. Verbose build follows." && make ${{ matrix.goal }} V=1 ; false )
 
       - name: Run benchmark
         if: ${{ matrix.run-bench }}
+        shell: bash
         run: |
           src/bench/bench_bells > ${{ matrix.name }}-bench.csv
           cat ${{ matrix.name }}-bench.csv
 
       - name: Run tests
         if: ${{ matrix.run-tests }}
+        shell: bash
         run: |
           make check "$MAKEJOBS" VERBOSE=1
           qa/pull-tester/install-deps.sh
@@ -193,13 +221,16 @@ jobs:
 
       - name: Check security
         if: ${{ matrix.check-security }}
+        shell: bash
         run: make -C src check-security
 
       - name: Check symbols
         if: ${{ matrix.check-symbols }}
+        shell: bash
         run: make -C src check-symbols
 
       - name: Bundle artifacts
+        shell: bash
         run: |
           if [ ${{ github.ref_type }} == "tag" ]; then
             ARTIFACT_VERSION="${{ github.ref_name }}"
@@ -228,6 +259,7 @@ jobs:
         if: ${{ github.event_name == 'release' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
           gh release upload \
             --repo ${{ github.repository }} \
